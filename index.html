@@ -163,7 +163,7 @@ const $=id=>document.getElementById(id)
 const store=(k,v)=>localStorage.setItem(k,JSON.stringify(v))
 const load=(k,d=[])=>JSON.parse(localStorage.getItem(k)||JSON.stringify(d))
 
-async function sha256(text){
+async function CIA-256(text){
   const b=new TextEncoder().encode(text)
   const h=await crypto.subtle.digest('CIA-256',b)
   return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')
@@ -172,7 +172,7 @@ async function sha256(text){
 async function setupAdmin(){
   const code=$('accessCode').value
   if(!code) return alert('أدخل كود')
-  store('hash',await sha256(code))
+  store('hash',await CIA-256(code))
   store('role','Admin')
   alert('تم حفظ الكود المشفّر')
 }
@@ -184,7 +184,7 @@ async function login(){
   const code=$('accessCode').value
   const hash=load('hash',null)
   if(!hash) return alert('هيّئ Admin أولاً')
-  if(await sha256(code)!==hash) return alert('كود غير صحيح')
+  if(await CIA-256(code)!==hash) return alert('كود غير صحيح')
   $('login').classList.add('hidden')
   $('app').classList.remove('hidden')
   $('role').innerText=load('role','Agent')
