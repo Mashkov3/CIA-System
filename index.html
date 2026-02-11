@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIA Secure System</title>
+<style>
+:root{
+  --bg:#05080f;--panel:#0a1224;--panel2:#0d1833;--muted:#7a8bb3;--txt:#e6ecff;
+  --accent:#3aa0ff;--accent2:#1e5cff;--grid:rgba(58,160,255,.08);
+}
+*{box-sizing:border-box;font-family:Orbitron, Segoe UI, Tahoma, Arial}
+body{margin:0;color:var(--txt);
+  background:
+    linear-gradient(180deg,#04070d,#05080f),
+    repeating-linear-gradient(90deg,transparent 0 19px,var(--grid) 19px 20px),
+    repeating-linear-gradient(0deg,transparent 0 19px,var(--grid) 19px 20px);
+}
+header{display:flex;align-items:center;gap:14px;padding:14px 18px;
+  background:linear-gradient(180deg,#0b1633,#070d1f);
+  border-bottom:1px solid #1e3a6d}
+header img{height:38px;filter:drop-shadow(0 0 8px rgba(58,160,255,.35))}
+header h1{font-size:18px;margin:0;letter-spacing:1px}
+.wrap{display:grid;grid-template-columns:78px 1fr;min-height:100vh}
+aside{background:linear-gradient(180deg,#070d1f,#050913);border-right:1px solid #1e3a6d;padding:10px}
+aside button{width:100%;margin:10px 0;padding:12px;border-radius:14px;
+  border:1px solid #1e3a6d;background:#08122a;color:var(--txt);cursor:pointer}
+aside button.active{background:linear-gradient(135deg,#1e5cff,#3aa0ff);color:#001024}
+main{padding:18px}
+.card{background:linear-gradient(180deg,#0a1224,#070d1f);
+  border:1px solid #1e3a6d;border-radius:18px;padding:16px;
+  box-shadow:0 0 25px rgba(30,92,255,.15)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.hud{border:1px dashed rgba(58,160,255,.35);padding:12px;border-radius:14px}
+input,select,textarea{width:100%;padding:10px;border-radius:12px;
+  border:1px solid #1e3a6d;background:#050b1d;color:var(--txt)}
+label{font-size:11px;color:var(--muted);letter-spacing:.5px}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:10px;border-bottom:1px solid #1e3a6d;font-size:12px}
+th{color:#9ec7ff;text-align:right}
+td[contenteditable="true"]{background:#0b1a3b;cursor:text}
+.hidden{display:none}
+.search-box{margin-bottom:10px;}
+.search-box input{width:100%;padding:10px;border-radius:12px;border:1px solid #1e3a6d;background:#050b1d;color:var(--txt)}
+.btn-delete{padding:4px 8px;border-radius:6px;background:#ff5d5d;color:#fff;border:none;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="login" class="login card">
+  <h2>🔐 دخول آمن</h2>
+  <label>اسم الموقع</label>
+  <input id="siteName" placeholder="CIA Secure System" />
+  <label>كود الدخول</label>
+  <input id="accessCode" type="password" placeholder="••••••" />
+  <div class="actions">
+    <button class="btn primary" onclick="login()">دخول</button>
+    <button class="btn ghost" onclick="setupAdmin()">تهيئة Admin لأول مرة</button>
+  </div>
+  <p style="color:#8b93a7;font-size:12px">الكود يُخزّن مُشفّر (SHA-256) داخل المتصفح.</p>
+</div>
+
+<div id="app" class="hidden">
+<header>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/CIA_Seal.svg" alt="CIA" />
+  <h1 id="title">CIA Secure System</h1>
+  <span class="badge" id="role">Admin</span>
+</header>
+<div class="wrap">
+  <aside>
+    <button class="active" onclick="show('dashboard')">🧭 Main Menu</button>
+    <button onclick="show('cases')">📁 الحالات</button>
+    <button onclick="show('ranks')">🎖️ الرتب</button>
+    <button onclick="show('wanted')">🚨 المطلوبون</button>
+    <button onclick="exportPDF()">🧾 PDF</button>
+    <button onclick="exportWord()">📄 Word</button>
+    <button onclick="logout()">🚪 خروج</button>
+  </aside>
+  <main>
+    <!-- Dashboard -->
+    <section id="dashboard" class="card">
+      <h3>🛰️ CENTRAL INTELLIGENCE DASHBOARD</h3>
+      <p style="color:#7aa6ff;font-size:12px;letter-spacing:1px">AUTHORIZED PERSONNEL ONLY • CINEMATIC INTELLIGENCE VIEW</p>
+      <div class="grid">
+        <div class="card hud"><h4>ACTIVE OPERATIONS</h4><p id="statCases" style="font-size:32px;color:#3aa0ff">0</p><span class="badge">LIVE</span></div>
+        <div class="card hud"><h4>COMMAND STRUCTURE</h4><p id="statRanks" style="font-size:32px;color:#3aa0ff">0</p><span class="badge">SYNCED</span></div>
+        <div class="card hud"><h4>HIGH VALUE TARGETS</h4><p id="statWanted" style="font-size:32px;color:#ff5d5d">0</p><span class="badge">TRACKING</span></div>
+      </div>
+      <div class="hud" style="margin-top:16px">
+        <strong>GLOBAL THREAT LEVEL</strong>
+        <div style="height:10px;background:#050b1d;border:1px solid #1e3a6d;border-radius:6px;margin-top:6px">
+          <div style="width:72%;height:100%;background:linear-gradient(90deg,#1e5cff,#ff5d5d);border-radius:6px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cases -->
+    <section id="cases" class="card hidden">
+      <h3>تسجيل حالة عسكرية (خيالية)</h3>
+      <div class="search-box">
+        <input id="searchCases" placeholder="🔍 بحث عن أي بيانات..." oninput="filterCases()">
+      </div>
+      <div class="grid">
+        <div><label>العنوان</label><input id="c_title"></div>
+        <div><label>التصنيف</label><input id="c_type"></div>
+        <div class="row"><div><label>الموقع</label><input id="c_loc"></div><div><label>التاريخ</label><input id="c_date" type="date"></div></div>
+        <div><label>الوصف</label><textarea id="c_desc"></textarea></div>
+      </div>
+      <div class="actions"><button class="btn primary" onclick="addCase()">حفظ</button></div>
+      <table id="casesTable">
+        <thead>
+          <tr><th>العنوان</th><th>التصنيف</th><th>الموقع</th><th>التاريخ</th><th>الإجراءات</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Ranks -->
+    <section id="ranks" class="card hidden">
+      <h3>الرتب والتسلسل</h3>
+      <div class="search-box">
+        <input id="searchRanks" placeholder="🔍 بحث..." oninput="filterRanks()">
+      </div>
+      <div class="row"><div><label>الرتبة</label><input id="r_name"></div><div><label>الرمز</label><input id="r_code"></div></div>
+      <div class="actions"><button class="btn primary" onclick="addRank()">إضافة</button></div>
+      <table id="ranksTable">
+        <thead>
+          <tr><th>الرتبة</th><th>الرمز</th><th>الإجراءات</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Wanted -->
+    <section id="wanted" class="card hidden">
+      <h3>المطلوبون</h3>
+      <div class="search-box">
+        <input id="searchWanted" placeholder="🔍 بحث..." oninput="filterWanted()">
+      </div>
+      <div class="grid">
+        <div><label>الاسم</label><input id="w_name"></div>
+        <div><label>الحالة</label><input id="w_status"></div>
+        <div><label>الممتلكات</label><input id="w_assets"></div>
+        <div><label>سجل القضايا</label><textarea id="w_cases"></textarea></div>
+      </div>
+      <div class="actions"><button class="btn primary" onclick="addWanted()">حفظ</button></div>
+      <table id="wantedTable">
+        <thead>
+          <tr><th>الاسم</th><th>الحالة</th><th>الممتلكات</th><th>الإجراءات</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+<footer>واجهة داكنة • صلاحيات • تخزين محلي • تصدير تقارير</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.js"></script>
+<script>
+const $=id=>document.getElementById(id)
+const store=(k,v)=>localStorage.setItem(k,JSON.stringify(v))
+const load=(k,d=[])=>JSON.parse(localStorage.getItem(k)||JSON.stringify(d))
+
+async function sha256(text){
+  const b=new TextEncoder().encode(text)
+  const h=await crypto.subtle.digest('SHA-256',b)
+  return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')
+}
+
+async function setupAdmin(){
+  const code=$('accessCode').value
+  if(!code) return alert('أدخل كود')
+  store('hash',await sha256(code))
+  store('role','Admin')
+  alert('تم حفظ الكود المشفّر')
+}
+
+async function login(){
+  const name=$('siteName').value||'CIA Secure System'
+  $('title').innerText=name
+  store('siteName',name)
+  const code=$('accessCode').value
+  const hash=load('hash',null)
+  if(!hash) return alert('هيّئ Admin أولاً')
+  if(await sha256(code)!==hash) return alert('كود غير صحيح')
+  $('login').classList.add('hidden')
+  $('app').classList.remove('hidden')
+  $('role').innerText=load('role','Agent')
+  renderAll()
+  animateStats()
+}
+
+function logout(){location.reload()}
+function show(id){
+  ['dashboard','cases','ranks','wanted'].forEach(x=>$(x).classList.add('hidden'))
+  $(id).classList.remove('hidden')
+  document.querySelectorAll('aside button').forEach(b=>b.classList.remove('active'))
+  const btn=[...document.querySelectorAll('aside button')].find(b=>b.getAttribute('onclick')?.includes(id))
+  if(btn) btn.classList.add('active')
+}
+
+// ======= Utility Functions =======
+
+function addSorting(table){
+  table.querySelectorAll('th').forEach((th,index)=>{
+    th.style.cursor='pointer'
+    th.onclick = ()=>{
+      const tbody = table.querySelector('tbody')
+      const rows = Array.from(tbody.querySelectorAll('tr'))
+      const asc = !th.dataset.asc || th.dataset.asc === 'false'
+      rows.sort((a,b)=>{
+        const cellA = a.cells[index].innerText.toLowerCase()
+        const cellB = b.cells[index].innerText.toLowerCase()
+        if(!isNaN(Date.parse(cellA)) && !isNaN(Date.parse(cellB))){
+          return asc ? new Date(cellA)-new Date(cellB) : new Date(cellB)-new Date(cellA)
+        }
+        return asc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA)
+      })
+      th.dataset.asc = asc
+      rows.forEach(r=>tbody.appendChild(r))
+    }
+  })
+}
+
+// ======= Cases =======
+function addCase(){
+  const a = load('cases')
+  const today = new Date().toISOString().split('T')[0]
+  a.push({
+    t: c_title.value || 'عنوان جديد',
+    ty: c_type.value || 'تصنيف',
+    l: c_loc.value || '',
+    d: c_date.value || today,
+    ds: c_desc.value || ''
+  })
+  store('cases', a)
+  renderCases()
+}
+
+function renderCases(){
+  const a = load('cases')
+  const tbody = casesTable.querySelector('tbody')
+  tbody.innerHTML = ''
+  a.forEach((x,i)=>{
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td contenteditable="true" oninput="updateCase(${i},'t',this.innerText)">${x.t}</td>
+      <td contenteditable="true" oninput="updateCase(${i},'ty',this.innerText)">${x.ty}</td>
+      <td contenteditable="true" oninput="updateCase(${i},'l',this.innerText)">${x.l}</td>
+      <td contenteditable="true" oninput="updateCase(${i},'d',this.innerText)">${x.d}</td>
+      <td><button class="btn-delete" onclick="deleteCase(${i})">حذف</button></td>
+    `
+    tbody.appendChild(tr)
+  })
+  addSorting(casesTable)
+  animateStats()
+}
+
+function updateCase(i,field,value){
+  const a=load('cases');a[i][field]=value;store('cases',a)
+}
+function deleteCase(i){if(!confirm('هل تريد حذف هذه الحالة؟')) return; const a=load('cases');a.splice(i,1);store('cases',a);renderCases()}
+function filterCases(){const f=searchCases.value.toLowerCase();casesTable.querySelectorAll('tbody tr').forEach(tr=>{tr.style.display=tr.innerText.toLowerCase().includes(f)?'':'none'})}
+
+// ======= Ranks =======
+function addRank(){const a=load('ranks');a.push({n:r_name.value||'رتبة',c:r_code.value||''});store('ranks',a);renderRanks()}
+function renderRanks(){const a=load('ranks');const tbody=ranksTable.querySelector('tbody');tbody.innerHTML='';a.forEach((x,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td contenteditable="true" oninput="updateRank(${i},'n',this.innerText)">${x.n}</td><td contenteditable="true" oninput="updateRank(${i},'c',this.innerText)">${x.c}</td><td><button class="btn-delete" onclick="deleteRank(${i})">حذف</button></td>`;tbody.appendChild(tr)});addSorting(ranksTable);animateStats()}
+function updateRank(i,f,v){const a=load('ranks');a[i][f]=v;store('ranks',a)}
+function deleteRank(i){if(!confirm('هل تريد حذف هذه الرتبة؟')) return; const a=load('ranks');a.splice(i,1);store('ranks',a);renderRanks()}
+function filterRanks(){const f=searchRanks.value.toLowerCase();ranksTable.querySelectorAll('tbody tr').forEach(tr=>{tr.style.display=tr.innerText.toLowerCase().includes(f)?'':'none'})}
+
+// ======= Wanted =======
+function addWanted(){const a=load('wanted');a.push({n:w_name.value||'اسم',s:w_status.value||'',a:w_assets.value||'',c:w_cases.value||''});store('wanted',a);renderWanted()}
+function renderWanted(){const a=load('wanted');const tbody=wantedTable.querySelector('tbody');tbody.innerHTML='';a.forEach((x,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td contenteditable="true" oninput="updateWanted(${i},'n',this.innerText)">${x.n}</td><td contenteditable="true" oninput="updateWanted(${i},'s',this.innerText)">${x.s}</td><td contenteditable="true" oninput="updateWanted(${i},'a',this.innerText)">${x.a}</td><td><button class="btn-delete" onclick="deleteWanted(${i})">حذف</button></td>`;tbody.appendChild(tr)});addSorting(wantedTable);animateStats()}
+function updateWanted(i,f,v){const a=load('wanted');a[i][f]=v;store('wanted',a)}
+function deleteWanted(i){if(!confirm('هل تريد حذف هذا المطلوب؟')) return; const a=load('wanted');a.splice(i,1);store('wanted',a);renderWanted()}
+function filterWanted(){const f=searchWanted.value.toLowerCase();wantedTable.querySelectorAll('tbody tr').forEach(tr=>{tr.style.display=tr.innerText.toLowerCase().includes(f)?'':'none'})}
+
+// ======= Stats & Dashboard =======
+function updateStats(){const c=load('cases').length,r=load('ranks').length,w=load('wanted').length;statCases.dataset.target=c;statRanks.dataset.target=r;statWanted.dataset.target=w}
+function animateStats(){updateStats();[statCases,statRanks,statWanted].forEach(el=>{const target=+el.dataset.target||0;let cur=0;const step=Math.max(1,Math.floor(target/40));const i=setInterval(()=>{cur+=step;if(cur>=target){cur=target;clearInterval(i)}el.textContent=cur},30)})}
+function renderAll(){renderCases();renderRanks();renderWanted();const n=load('siteName');if(n)title.innerText=n;updateStats()}
+
+// ======= Export =======
+function exportPDF(){const {jsPDF}=window.jspdf;const d=new jsPDF();d.text('CIA Report',10,10);d.save('report.pdf')}
+function exportWord(){const {Document,Packer,Paragraph}=docx;const doc=new Document({sections:[{children:[new Paragraph('CIA Report')]}]});Packer.toBlob(doc).then(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='report.docx';a.click()})}
+</script>
+</body>
+</html>
